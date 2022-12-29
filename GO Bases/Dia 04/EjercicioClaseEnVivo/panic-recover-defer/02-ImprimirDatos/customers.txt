@@ -1,0 +1,9 @@
+[
+    {
+        "DNI"    : 1,
+        "Name"   : "Sergio",
+        "Docket" : 1234,
+        "Phone"  : "+57 314244876",
+        "Home"   : "Calle 61 # 44 - 22, B. Boston."
+    }
+]
