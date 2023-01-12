@@ -2,6 +2,7 @@ package product
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"proyectoapisupermercado/internal/domain"
@@ -15,7 +16,7 @@ type ProductRepository struct {
 var (
 	stringPathFileProducts = "../../internal/product/products.json"
 
-	ErrorNoFoundProduct = "No found product"
+	ErrorNoFoundProduct = errors.New("no found product")
 )
 
 func NewProductRepository(store store.IStore) IProductRepository {
@@ -57,7 +58,8 @@ func (p *ProductRepository) GetProductById(id int) (product domain.Product, err 
 		}
 	}
 	if !existProduct {
-		err = fmt.Errorf("no se encontro producto por el id '%d'", id)
+		err = ErrorNoFoundProduct
+		return
 	}
 
 	return
@@ -169,7 +171,7 @@ func (p *ProductRepository) UpdateProductPartial(product domain.Product) (produc
 		break
 	}
 	if !exist {
-		err = fmt.Errorf(ErrorNoFoundProduct)
+		err = ErrorNoFoundProduct
 		return
 	}
 
@@ -224,7 +226,7 @@ func (p *ProductRepository) DeleteProduct(id int) (productDelete bool, err error
 		break
 	}
 	if !exist {
-		err = fmt.Errorf(ErrorNoFoundProduct)
+		err = ErrorNoFoundProduct
 		return
 	}
 

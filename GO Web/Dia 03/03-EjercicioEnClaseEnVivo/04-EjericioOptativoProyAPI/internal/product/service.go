@@ -3,6 +3,7 @@ package product
 import (
 	"fmt"
 	"proyectoapisupermercado/internal/domain"
+	"proyectoapisupermercado/internal/tools"
 )
 
 type ProductService struct {
@@ -64,14 +65,24 @@ func (p *ProductService) GetConsumerPrice(listIds []int) (productsReturn []domai
 		err = fmt.Errorf("ocurrio un error: %w", err)
 		return
 	}
+	//Ordenamos lo ids
+	tools.SortArray(&listIds)
 	productsReturn = []domain.Product{}
+	//*****************************  Proceso optimo   *****************************
 	//Recorremos los los productos existentes o hasta que se terminen los productos solicitados
-	//NOTA: Este ciclo for se optimizo, para que se cumpla los objetos tipo []domain.Product deben estar ordenados.
+	//NOTA: Este ciclo for se optimizo, para que se cumpla los objetos tipo []domain.Product y listIds deben estar ordenados.
 	var indIdSolicitado int = 0
 	var relProdQuantity map[int]int = make(map[int]int) // id-quantity
 	for i := 0; i < len(products) && indIdSolicitado < len(listIds); i++ {
 		//Validamos si el producto del ciclo actual es solicitado
 		if products[i].Id != listIds[indIdSolicitado] {
+			if products[i].Id > listIds[indIdSolicitado] {
+				indIdSolicitado++
+			}
+			continue
+		}
+		//Verificamos si esta publicado
+		if !*products[i].IsPublished {
 			continue
 		}
 		//Validamos si aun queda cantidad en stock, de lo contrario retornamos error
@@ -92,6 +103,38 @@ func (p *ProductService) GetConsumerPrice(listIds []int) (productsReturn []domai
 		}
 		indIdSolicitado++
 	}
+
+	//*****************************  Proceso poco optimo   *****************************
+	/* var relProdQuantity map[int]int = make(map[int]int) // id-quantity
+	for _, id := range listIds {
+		//Solicitamos el producto requerido
+		var product domain.Product
+		product, err = p.productRepository.GetProductById(id)
+		if err != nil {
+			//Si el error se trata por no encontrar un pedido, continuamos al siguiente ciclo
+			if errors.Is(err, ErrorNoFoundProduct) {
+				err = nil
+				continue
+			}
+			return
+		}
+		//Verificamos si esta publicado
+		if !*product.IsPublished {
+			continue
+		}
+		//Validamos si aun queda cantidad en stock, de lo contrario retornamos error
+		if relProdQuantity[product.Id] >= *product.Quantity {
+			err = &ErrorInformative{
+				Message: fmt.Sprintf("el producto '%s' con ID %d solo contiene %d en stock",
+					product.Name, product.Id, *product.Quantity),
+			}
+			return
+		}
+		//Agregamos el producto que se quiere devolver
+		productsReturn = append(productsReturn, product)
+		priceTotal += product.Price
+	} */
+
 	//Calculamos los impuestos correspondientes al precio final segun la cantidad de productos
 	var porImpuesto float64
 	switch {
